@@ -33,12 +33,12 @@ localization_levels <- c('cell',
 samples <- read.table('metadata/set1.txt',
            header=T, sep='\t', stringsAsFactors = F, comment.char="") %>%
     mutate(
-        sample_id = Sample_Name,
+        sample = Sample_Name,
         celltype=factor(source_name, levels=celltype_levels),
         layout=factor(LibraryLayout, levels=layout_levels),
         rnaextract=factor(rnaextract, levels=rnaextract_levels),
         localization=factor(localization, levels=localization_levels)
     ) %>%
-    select(sample_id, celltype, layout, rnaextract, localization)
+    select(sample, celltype, layout, rnaextract, localization)
 
-row.names(samples) <- samples$sample_id
+row.names(samples) <- samples$sample

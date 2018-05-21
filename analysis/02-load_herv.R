@@ -1,13 +1,16 @@
 #! /usr/bin/env Rscript
 
 library(tidyverse)
-library(DESeq2)
-library(BiocParallel)
-register(MulticoreParam(12))
 
 ## Load HERV annotation
+
+# Load mapping between HERV families and nicknames. This is used for coloring
+# and visualization.
 herv_fam <- read.table('analysis/herv_families.tsv', sep='\t', header=T, stringsAsFactors = F)
-annot.herv <- read.table('refs/HERV_rmsk.hg38.v2.tsv.gz',
+
+# Load TSV file with one row for each HERV in the annotation. Telescope reports
+# are put into the same order as this TSV, and nicknames are added to the table.
+annot.herv <- read.table('refs/HERV_rmsk.hg38.v2.tsv',
                          sep='\t', header=T, stringsAsFactors = F) %>%
     dplyr::mutate(length=end - start + 1) %>%
     tidyr::separate(locus, c("family"), sep='_', extra='drop', remove=F) %>%
@@ -18,14 +21,14 @@ annot.herv <- read.table('refs/HERV_rmsk.hg38.v2.tsv.gz',
     ) %>%
     dplyr::select(locus, chrom, start, end, length, family, group, category)
 
-### Remove sample(s) that failed for telescope
+# Remove sample(s) that failed for telescope
 samples[!(row.names(samples) %in% c('GSM958733')),] %>%
     droplevels -> samples
 
-### Final Counts from Telescope
-counts.herv <- lapply(samples$sample_id,
+# Final Counts from Telescope
+counts.telescope <- lapply(samples$sample,
                       function(s){
-                          tmp <- read.table(file.path('results', paste(s, 'inform-telescope_report.tsv', sep='.')),
+                          tmp <- read.table(file.path('samples', s, 'inform-telescope_report.tsv'),
                                             sep='\t', header=T, stringsAsFactors=F)
                           ret <- data.frame(transcript=annot.herv$locus, stringsAsFactors=F) %>%
                               left_join(tmp, by='transcript') %>%
@@ -41,40 +44,39 @@ counts.herv <- lapply(samples$sample_id,
                           ret
                       }) %>%
     bind_cols
-row.names(counts.herv) <- annot.herv$locus
+row.names(counts.telescope) <- annot.herv$locus
 
-### Unique Counts from Telescope
-counts.unique <- lapply(samples$sample_id,
-                      function(s){
-                          tmp <- read.table(file.path('results', paste(s, 'inform-telescope_report.tsv', sep='.')),
-                                            sep='\t', header=T, stringsAsFactors=F)
-                          ret <- data.frame(transcript=annot.herv$locus, stringsAsFactors=F) %>%
-                              left_join(tmp, by='transcript') %>%
-                              mutate(
-                                  gene_id = transcript,
-                                  count = unique_count
-                              ) %>%
-                              select(gene_id, count)
-                          ret[is.na(ret)] <- 0
-                          stopifnot(all(ret$gene_id == annot.herv$locus))
-                          ret$gene_id <- NULL
-                          names(ret) <- c(s)
-                          ret
-                      }) %>%
+# Unique Counts calculated by Telescope
+counts.unique <- lapply(samples$sample,
+                     function(s){
+                         tmp <- read.table(file.path('samples', s, 'inform-telescope_report.tsv'),
+                                           sep='\t', header=T, stringsAsFactors=F)
+                         ret <- data.frame(transcript=annot.herv$locus, stringsAsFactors=F) %>%
+                             left_join(tmp, by='transcript') %>%
+                             mutate(
+                                 gene_id = transcript,
+                                 count = final_count
+                             ) %>%
+                             select(gene_id, count)
+                         ret[is.na(ret)] <- 0
+                         stopifnot(all(ret$gene_id == annot.herv$locus))
+                         ret$gene_id <- NULL
+                         names(ret) <- c(s)
+                         ret
+                     }) %>%
     bind_cols
 row.names(counts.unique) <- annot.herv$locus
 
-
-### Best Counts from Telescope
-counts.unique <- lapply(samples$sample_id,
+# Best Counts calculated by Telescope
+counts.best <- lapply(samples$sample,
                         function(s){
-                            tmp <- read.table(file.path('results', paste(s, 'inform-telescope_report.tsv', sep='.')),
+                            tmp <- read.table(file.path('samples', s, 'inform-telescope_report.tsv'),
                                               sep='\t', header=T, stringsAsFactors=F)
                             ret <- data.frame(transcript=annot.herv$locus, stringsAsFactors=F) %>%
                                 left_join(tmp, by='transcript') %>%
                                 mutate(
                                     gene_id = transcript,
-                                    count = unique_count
+                                    count = final_count
                                 ) %>%
                                 select(gene_id, count)
                             ret[is.na(ret)] <- 0
@@ -84,14 +86,13 @@ counts.unique <- lapply(samples$sample_id,
                             ret
                         }) %>%
     bind_cols
-row.names(counts.unique) <- annot.herv$locus
+row.names(counts.best) <- annot.herv$locus
 
-
-## Create DESeq object
-dds.rx <- DESeqDataSetFromMatrix(counts.herv, samples, ~1)
-dds.rx <- DESeq(dds.rx, parallel=F)
-
-## Transform DESeq counts
-tform.rx.vsd <- varianceStabilizingTransformation(dds.rx, blind=FALSE)
-tform.rx.norm <- normTransform(dds.rx)
-
+# ## Create DESeq object
+# dds.rx <- DESeqDataSetFromMatrix(counts.herv, samples, ~1)
+# dds.rx <- DESeq(dds.rx, parallel=F)
+# 
+# ## Transform DESeq counts
+# tform.rx.vsd <- varianceStabilizingTransformation(dds.rx, blind=FALSE)
+# tform.rx.norm <- normTransform(dds.rx)
+# 
