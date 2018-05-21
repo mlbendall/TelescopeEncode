@@ -1,21 +1,9 @@
 #! /usr/bin/env Rscript
 
 library(tidyverse)
-# library(tximport)
 library(DESeq2)
 library(BiocParallel)
 register(MulticoreParam(12))
-
-## Load samples
-if(file.exists('load_sampledata.Rdata')) {
-    load('load_sampledata.Rdata')
-} else {
-    source('load_sampledata.R')
-}
-rm(list=ls(pattern='samp\\.'))
-rm(celltypes, lineages, stages, studies, study_abbr)
-
-
 
 ## Load HERV annotation
 herv_fam <- read.table('analysis/herv_families.tsv', sep='\t', header=T, stringsAsFactors = F)
@@ -75,6 +63,29 @@ counts.unique <- lapply(samples$sample_id,
                       }) %>%
     bind_cols
 row.names(counts.unique) <- annot.herv$locus
+
+
+### Best Counts from Telescope
+counts.unique <- lapply(samples$sample_id,
+                        function(s){
+                            tmp <- read.table(file.path('results', paste(s, 'inform-telescope_report.tsv', sep='.')),
+                                              sep='\t', header=T, stringsAsFactors=F)
+                            ret <- data.frame(transcript=annot.herv$locus, stringsAsFactors=F) %>%
+                                left_join(tmp, by='transcript') %>%
+                                mutate(
+                                    gene_id = transcript,
+                                    count = unique_count
+                                ) %>%
+                                select(gene_id, count)
+                            ret[is.na(ret)] <- 0
+                            stopifnot(all(ret$gene_id == annot.herv$locus))
+                            ret$gene_id <- NULL
+                            names(ret) <- c(s)
+                            ret
+                        }) %>%
+    bind_cols
+row.names(counts.unique) <- annot.herv$locus
+
 
 ## Create DESeq object
 dds.rx <- DESeqDataSetFromMatrix(counts.herv, samples, ~1)
