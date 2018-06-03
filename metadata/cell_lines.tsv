@@ -1,0 +1,44 @@
+celltype	tier	karyotype	lineage	tissue	sex	description
+H1-hESC	1	NORMAL	ICM	ESC	M	embryonic stem cell
+GM12878	1	NORMAL	mesoderm	blood	F	B-lymphocyte
+K562	1	CANCER	mesoderm	blood	F	leukemia
+HeLa-S3	2	CANCER	ectoderm	cervix	F	cervical carcinoma
+HepG2	2	CANCER	endoderm	liver	M	hepatocellular carcinoma
+HUVEC	2	NORMAL	mesoderm	blood vessel	U	umbilical vein endothelial cells
+SK-N-SH	2	CANCER	ectoderm	brain	F	neuroblastoma
+IMR90	2	NORMAL	endoderm	lung	F	fetal lung fibroblasts
+A549	2	CANCER	endoderm	epithelium	M	epithelial cell line from lung carcinoma
+MCF-7	2	CANCER	ectoderm	breast	F	mammary gland adenocarcinoma
+CD20+	2	NORMAL	mesoderm	blood	F	B cells
+Monocytes-CD14+	2	NORMAL	mesoderm	blood	F	CD14-positive cells
+NHEK	3	NORMAL	ectoderm	skin	U	epidermal keratinocytes
+AG04450	3	NORMAL	endoderm	lung	M	fetal lung fibroblast
+BJ	3	NORMAL		skin	M	skin fibroblast
+CD34+_Mobilized	3	NORMAL		blood	M	hematopoietic progenitor cells
+GM12891	3	NORMAL	mesoderm	blood	M	B-lymphocyte
+GM12892	3	NORMAL	mesoderm	blood	F	B-lymphocyte
+HAoAF	3	NORMAL	mesoderm	blood vessel	B	Aortic Adventitial Fibroblasts
+HAoEC	3	NORMAL	mesoderm	blood vessel	B	Aortic Endothelial Cells
+HCH	3	NORMAL		cartilage	M	Undifferentiated Chondrocytes
+HCT-116	3	CANCER	endoderm	colon	M	colorectal carcinoma 
+HFDPC	3	NORMAL		skin	F	Follicle Dermal Papilla Cells
+HMEC	3	NORMAL	ectoderm	breast	U	mammary epithelial cells
+HMEpC	3	NORMAL	ectoderm	breast	F	mammary epithelial cells
+hMNC-PB	3	NORMAL		blood	B	Mononuclear Cells
+hMSC-AT	3	NORMAL		adipose	F	Undifferentiated Mesenchymal Stem Cells
+hMSC-BM	3	NORMAL		bone marrow	B	Undifferentiated Mesenchymal Stem Cells
+hMSC-UC	3	NORMAL		umbilical cord	B	Undifferentiated Mesenchymal Stem Cells
+HOB	3	NORMAL		cancellous bone	M	Undifferentiated Osteoblasts
+HPC-PL	3	NORMAL		placenta	B	Undifferentiated Pericytes
+HPIEpC	3	NORMAL		placenta	B	Placental Epithelial Cells
+HSaVEC	3	NORMAL	mesoderm	blood vessel	M	Saphenous Vein Endothelial Cells
+HSMM	3	NORMAL	mesoderm	muscle	U	skeletal muscle myoblasts
+HVMF	3	NORMAL		connective	U	villous mesenchymal fibroblast cells
+HWP	3	NORMAL		adipose	B	undifferentiated white preadipocytes
+LHCN-M2	2		mesoderm	muscle	M	skeletal muscle myoblasts
+NHDF	3	NORMAL		skin	F	dermal fibroblasts
+NHEM_M2	3	NORMAL		skin	B	epidermal melanocytes
+NHEM.f_M2	3	NORMAL		skin	M	epidermal melanocytes
+NHLF	3	NORMAL	endoderm	lung	U	lung fibroblasts
+SK-N-SH_RA	3	CANCER	ectoderm	brain	F	neuroblastoma
+SkMC	3	NORMAL		muscle	B	skeletal muscle myosatellite

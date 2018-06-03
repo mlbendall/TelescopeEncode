@@ -1,44 +1,36 @@
 library(tidyverse)
 
-celltype_levels <- c('H1-hESC', 
-                     'GM12878',
-                     'K562',
-                     'HeLa-S3',
-                     'HepG2',
-                     'HUVEC',
-                     'SK-N-SH',
-                     'IMR90',
-                     'A549',
-                     'MCF-7',
-                     'CD20+',
-                     'Monocytes-CD14+',
-                     'NHEK'
-)
-layout_levels <- c('PAIRED',
-                   'SINGLE'
-)
-rnaextract_levels <- c('longPolyA', 
-                       'total', 
-                       'longNonPolyA'
-)
-localization_levels <- c('cell', 
-                         'cytosol', 
-                         'nucleus',
-                         'nucleolus',                         
-                         'nucleoplasm',
-                         'chromatin'
-)
+cell_metadata <- read.table('metadata/cell_lines.tsv', header=T, sep='\t') %>%
+    mutate(celltype=factor(celltype, levels=celltype))
 
 
-samples <- read.table('metadata/set1.txt',
+subcellular_fraction_levels <- 
+    c('cell', 'cytosol', 'nucleus', 'nucleolus', 'nucleoplasm', 'chromatin')
+
+
+samples.long <- read.table('metadata/set1.tsv',
            header=T, sep='\t', stringsAsFactors = F, comment.char="") %>%
     mutate(
         sample = Sample_Name,
-        celltype=factor(source_name, levels=celltype_levels),
-        layout=factor(LibraryLayout, levels=layout_levels),
-        rnaextract=factor(rnaextract, levels=rnaextract_levels),
-        localization=factor(localization, levels=localization_levels)
-    ) %>%
-    select(sample, celltype, layout, rnaextract, localization)
+        celltype=factor(source_name, levels=cell_metadata$celltype),
+        layout=factor(LibraryLayout, 
+                      levels=c('PAIRED','SINGLE')),
+        rnaextract=factor(rnaextract, 
+                          levels=c('longPolyA', 'total', 'longNonPolyA')),
+        subcellular_fraction=factor(subcellular_fraction, 
+                                    levels=subcellular_fraction_levels),
+        sequencing_center=factor(sequencing_center,
+                                 levels=c('CSHL','CALTECH'))
+    )
+
+row.names(samples.long) <- samples.long$sample
+
+samples <- samples.long %>%
+    select(sample, celltype, layout, rnaextract, subcellular_fraction, 
+           sequencing_center)
+
+samples <- samples %>% dplyr::inner_join(cell_metadata, by='celltype')
 
 row.names(samples) <- samples$sample
+
+rm(subcellular_fraction_levels)

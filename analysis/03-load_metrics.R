@@ -16,8 +16,6 @@ names(met.aln) <- c('sample', 'total_reads', 'alnrate')
 met.aln$total_reads <- as.integer(met.aln$total_reads)
 met.aln$alnrate <- as.double(met.aln$alnrate) * 1e-2
 met.aln <- met.aln %>% mutate(naln=floor(total_reads*alnrate))
-row.names(met.aln) <- met.aln$sample
-
 
 # Load telescope metrics from comment
 metrics.list <- lapply(samples$sample, 
@@ -39,4 +37,9 @@ met.ts <- lapply(metrics.list, function(m) {
     names(ret) <- gsub('\\..*', '', names(ret))
     ret
 }) %>% do.call(rbind, .) %>% data.frame
-row.names(met.ts) <- samples$sample
+met.ts$sample <- samples$sample
+
+metrics <- dplyr::inner_join(met.aln, met.ts, by='sample')
+row.names(metrics) <- metrics$sample
+
+rm(met.ts, met.aln, mn, metrics.list)

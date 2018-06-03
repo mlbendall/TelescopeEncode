@@ -6,7 +6,8 @@ library(tidyverse)
 
 # Load mapping between HERV families and nicknames. This is used for coloring
 # and visualization.
-herv_fam <- read.table('analysis/herv_families.tsv', sep='\t', header=T, stringsAsFactors = F)
+herv_fam <- read.table('analysis/herv_families.tsv', 
+                       sep='\t', header=T, stringsAsFactors = F)
 
 # Load TSV file with one row for each HERV in the annotation. Telescope reports
 # are put into the same order as this TSV, and nicknames are added to the table.
@@ -17,18 +18,16 @@ annot.herv <- read.table('refs/HERV_rmsk.hg38.v2.tsv',
     dplyr::left_join(herv_fam, by='family') %>%
     dplyr::mutate(
         family=factor(family, levels=herv_fam$family),
-        group=factor(group, levels=unique(herv_fam$group))
+        group=factor(group, levels=unique(herv_fam$group)),
+        letter=factor(letter, levels=unique(herv_fam$letter))
     ) %>%
-    dplyr::select(locus, chrom, start, end, length, family, group, category)
-
-# Remove sample(s) that failed for telescope
-samples[!(row.names(samples) %in% c('GSM958733')),] %>%
-    droplevels -> samples
+    dplyr::select(locus, chrom, start, end, length, family, group, letter, category)
 
 # Final Counts from Telescope
 counts.telescope <- lapply(samples$sample,
                       function(s){
-                          tmp <- read.table(file.path('samples', s, 'inform-telescope_report.tsv'),
+                          tmp <- read.table(
+                              file.path('samples', s, 'inform-telescope_report.tsv'),
                                             sep='\t', header=T, stringsAsFactors=F)
                           ret <- data.frame(transcript=annot.herv$locus, stringsAsFactors=F) %>%
                               left_join(tmp, by='transcript') %>%
@@ -87,12 +86,3 @@ counts.best <- lapply(samples$sample,
                         }) %>%
     bind_cols
 row.names(counts.best) <- annot.herv$locus
-
-# ## Create DESeq object
-# dds.rx <- DESeqDataSetFromMatrix(counts.herv, samples, ~1)
-# dds.rx <- DESeq(dds.rx, parallel=F)
-# 
-# ## Transform DESeq counts
-# tform.rx.vsd <- varianceStabilizingTransformation(dds.rx, blind=FALSE)
-# tform.rx.norm <- normTransform(dds.rx)
-# 
