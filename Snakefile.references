@@ -1,0 +1,50 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+
+''' References '''
+localrules: download_references
+    
+rule download_references:
+    input:
+        ancient("refs/")
+    output:
+        "refs/download/GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta.gz",
+        "refs/download/ENCFF908UQN.fasta.gz",
+        "refs/download/ENCFF824ZKD.gtf.gz"
+    shell:
+        "mkdir -p refs/download && "
+        "wget -O {output[0]} https://www.encodeproject.org/files/GRCh38_no_alt_analysis_set_GCA_000001405.15/@@download/GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta.gz && "
+        "wget -O {output[1]} https://www.encodeproject.org/files/ENCFF908UQN/@@download/ENCFF908UQN.fasta.gz && "
+        "wget -O {output[2]} https://www.encodeproject.org/files/ENCFF824ZKD/@@download/ENCFF824ZKD.gtf.gz"
+
+
+rule build_bowtie_index:
+    input:
+        genome = "refs/download/GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta.gz",
+        ctrls = "refs/download/ENCFF908UQN.fasta.gz"
+    output:
+        expand(config['btidx'] + ".{i}.ebwt", i = range(1, 5)),
+        expand(config['btidx'] + ".rev.{i}.ebwt", i = range(1, 3))
+    threads: snakemake.utils.available_cpu_count()        
+    shell:
+        "tmpidx=$(mktemp -d) && tmpfasta=$(mktemp) && "
+        "cat {input.genome} {input.ctrls} | gunzip > $tmpfasta && "
+        "bowtie-build -f $tmpfasta $tmpidx/$(basename {config[btidx]}) && "
+        "mkdir -p $(dirname {config[btidx]}) && "
+        "mv $tmpidx/* $(dirname {config[btidx]})"
+
+
+rule build_bowtie2_index:
+    input:
+        genome = "refs/download/GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta.gz",
+        ctrls = "refs/download/ENCFF908UQN.fasta.gz"
+    output:
+        expand(config['bt2idx'] + ".{i}.bt2", i = range(1, 5)),
+        expand(config['bt2idx'] + ".rev.{i}.bt2", i = range(1, 3))
+    threads: snakemake.utils.available_cpu_count()        
+    shell:
+        "tmpidx=$(mktemp -d) && tmpfasta=$(mktemp) && "
+        "cat {input.genome} {input.ctrls} | gunzip > $tmpfasta && "
+        "bowtie2-build --threads {threads} -f $tmpfasta $tmpidx/$(basename {config[bt2idx]}) && "
+        "mkdir -p $(dirname {config[bt2idx]}) && "
+        "mv $tmpidx/* $(dirname {config[bt2idx]})"

@@ -5,7 +5,7 @@ __default__:
     t: 360
     out: "snakelogs/slurm-%j.out"
     name: "sm.{rule}"
-fastq_dump:
+rundata:
     t: 120
     out: "snakelogs/slurm-%j.{rule}.{wildcards.sraid}.out"
     name: "sm.{rule}.{wildcards.sraid}"
@@ -21,3 +21,15 @@ telescope:
     t: 2880
     out: "snakelogs/slurm-%j.{rule}_{wildcards.preset}.{wildcards.sampid}.out"
     name: "sm.{rule}_{wildcards.preset}.{wildcards.sampid}"
+bowtie:
+    t: 2880
+    out: "snakelogs/slurm-%j.{rule}_{wildcards.preset}.{wildcards.sraid}.out"
+    name: "sm.{rule}_{wildcards.preset}.{wildcards.sraid}"    
+repenrich:
+    t: 2880
+    out: "snakelogs/slurm-%j.{rule}.{wildcards.sampid}.out"
+    name: "sm.{rule}.{wildcards.sampid}"
+sortbam:
+    t: 120
+    out: "snakelogs/slurm-%j.{rule}.out"
+    name: "sm.{rule}"

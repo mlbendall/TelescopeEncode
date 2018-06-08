@@ -1,4 +1,4 @@
-sample_table: metadata/set1.txt
+sample_table: metadata/set1.tsv
 adapters:
     PE: "refs/adapters_PE.fa"
     SE: "refs/adapters_SE.fa"    
@@ -24,14 +24,7 @@ bowtie2:
         X: 1200
     default:
         sensitive: ""
-btidx: "refs/BowtieIndex/hg38"
-bowtie:
-    repenrich:
-        time: ""
-        m: 1
-        sam: ""
-        X: 1200
-        chunkmbs: 512
+
 herv_annotation: "refs/HERV_rmsk.hg38.v2.gtf"
 herv_annotation_tsv: "refs/HERV_rmsk.hg38.v2.tsv"
 telescope:
@@ -39,7 +32,19 @@ telescope:
         exp_tag: "inform"
         theta_prior: 200000
         max_iter: 200
-        updated_sam: ""
+        updated_sam: ""        
+
+btidx: "refs/BowtieIndex/hg38"
+bowtie:
+    repenrich:
+        m: 1
+        sam: ""
+        X: 1200
+        chunkmbs: 512
+    default:
+        sam: ""
+        X: 1200
+        chunkmbs: 512    
 
 repenrich_py: "scripts/RepEnrich-1.2/RepEnrich.py"
 repenrich_setup_py: "scripts/RepEnrich-1.2/RepEnrich_setup.py"
