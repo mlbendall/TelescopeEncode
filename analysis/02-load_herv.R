@@ -1,8 +1,9 @@
 #! /usr/bin/env Rscript
-
 library(tidyverse)
 
-## Load HERV annotation
+################################################################################
+# Load sample data
+################################################################################
 
 # Load mapping between HERV families and nicknames. This is used for coloring
 # and visualization.
@@ -22,67 +23,3 @@ annot.herv <- read.table('refs/HERV_rmsk.hg38.v2.tsv',
         letter=factor(letter, levels=unique(herv_fam$letter))
     ) %>%
     dplyr::select(locus, chrom, start, end, length, family, group, letter, category)
-
-# Final Counts from Telescope
-counts.telescope <- lapply(samples$sample,
-                      function(s){
-                          tmp <- read.table(
-                              file.path('samples', s, 'inform-telescope_report.tsv'),
-                                            sep='\t', header=T, stringsAsFactors=F)
-                          ret <- data.frame(transcript=annot.herv$locus, stringsAsFactors=F) %>%
-                              left_join(tmp, by='transcript') %>%
-                              mutate(
-                                  gene_id = transcript,
-                                  count = final_count
-                              ) %>%
-                              select(gene_id, count)
-                          ret[is.na(ret)] <- 0
-                          stopifnot(all(ret$gene_id == annot.herv$locus))
-                          ret$gene_id <- NULL
-                          names(ret) <- c(s)
-                          ret
-                      }) %>%
-    bind_cols
-row.names(counts.telescope) <- annot.herv$locus
-
-# Unique Counts calculated by Telescope
-counts.unique <- lapply(samples$sample,
-                     function(s){
-                         tmp <- read.table(file.path('samples', s, 'inform-telescope_report.tsv'),
-                                           sep='\t', header=T, stringsAsFactors=F)
-                         ret <- data.frame(transcript=annot.herv$locus, stringsAsFactors=F) %>%
-                             left_join(tmp, by='transcript') %>%
-                             mutate(
-                                 gene_id = transcript,
-                                 count = final_count
-                             ) %>%
-                             select(gene_id, count)
-                         ret[is.na(ret)] <- 0
-                         stopifnot(all(ret$gene_id == annot.herv$locus))
-                         ret$gene_id <- NULL
-                         names(ret) <- c(s)
-                         ret
-                     }) %>%
-    bind_cols
-row.names(counts.unique) <- annot.herv$locus
-
-# Best Counts calculated by Telescope
-counts.best <- lapply(samples$sample,
-                        function(s){
-                            tmp <- read.table(file.path('samples', s, 'inform-telescope_report.tsv'),
-                                              sep='\t', header=T, stringsAsFactors=F)
-                            ret <- data.frame(transcript=annot.herv$locus, stringsAsFactors=F) %>%
-                                left_join(tmp, by='transcript') %>%
-                                mutate(
-                                    gene_id = transcript,
-                                    count = final_count
-                                ) %>%
-                                select(gene_id, count)
-                            ret[is.na(ret)] <- 0
-                            stopifnot(all(ret$gene_id == annot.herv$locus))
-                            ret$gene_id <- NULL
-                            names(ret) <- c(s)
-                            ret
-                        }) %>%
-    bind_cols
-row.names(counts.best) <- annot.herv$locus
