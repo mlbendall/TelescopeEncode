@@ -2,7 +2,7 @@
 library(tidyverse)
 
 ################################################################################
-# Load sample data
+# Load annotation data
 ################################################################################
 
 # Load mapping between HERV families and nicknames. This is used for coloring

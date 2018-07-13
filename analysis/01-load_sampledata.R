@@ -8,7 +8,9 @@ library(tidyverse)
 #--- Cell type data (cancer vs. normal, tissue, etc.) is provided in table
 #    named metadata/cell_lines.tsv
 cell_metadata <- read.table('metadata/cell_lines.tsv', header=T, sep='\t') %>%
-    mutate(celltype=factor(celltype, levels=celltype))
+    mutate(celltype=factor(celltype, levels=celltype),
+           karyotype=factor(karyotype, levels=c('NORMAL','CANCER'))
+           )
 
 # Possible subcellular fraction for complete data
 subcellular_fraction_levels <- 
@@ -38,13 +40,24 @@ samples <- samples.long %>%
 
 samples <- samples %>% dplyr::inner_join(cell_metadata, by='celltype')
 
-row.names(samples) <- samples$sample
 
 # Clean up factors (for set1 only)
 cell_metadata <- cell_metadata %>% 
-    filter(celltype %in% samples$celltype) %>% 
+    dplyr::filter(celltype %in% samples$celltype) %>% 
+    dplyr::mutate(
+        celltype=dplyr::recode(celltype, `Monocytes-CD14+`='CD14+')
+    ) %>%
     droplevels
 
-samples <- samples %>% droplevels
+samples <- samples %>%
+    dplyr::mutate(
+        celltype=dplyr::recode(celltype, `Monocytes-CD14+`='CD14+')
+    ) %>%
+    dplyr::mutate(
+        display=paste(as.character(celltype), substring(sample, 7), sep='.')
+    ) %>%
+    droplevels
+
+row.names(samples) <- samples$sample    
 
 rm(subcellular_fraction_levels)
