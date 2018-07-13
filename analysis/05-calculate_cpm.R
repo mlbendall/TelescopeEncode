@@ -12,6 +12,7 @@ stopifnot(all(colnames(counts.telescope) == rownames(metrics)))
 # CPM for telescope, best, and TETranscripts - bowtie2 mapping
 cpm.telescope <- t(t(counts.telescope) / (metrics$mapped_frags.bt2 / 1e6))
 cpm.best <- t(t(counts.best) / (metrics$mapped_frags.bt2 / 1e6))
+cpm.fam <- t(t(counts.fam) / (metrics$mapped_frags.bt2 / 1e6))
 
 # CPM for unique - only uniquely mapping fragments
 cpm.unique <- t(t(counts.unique) / (metrics$unique.ts / 1e6))
