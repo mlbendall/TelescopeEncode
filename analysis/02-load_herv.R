@@ -22,4 +22,4 @@ annot.herv <- read.table('refs/HERV_rmsk.hg38.v2.tsv',
         group=factor(group, levels=unique(herv_fam$group)),
         letter=factor(letter, levels=unique(herv_fam$letter))
     ) %>%
-    dplyr::select(locus, chrom, start, end, length, family, group, letter, category)
+    dplyr::select(locus, chrom, start, end, strand, length, family, group, letter, category)

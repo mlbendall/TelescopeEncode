@@ -1,3 +1,4 @@
+#! /usr/bin/env Rscript
 library(tidyverse)
 source('analysis/09-colors.R')
 
@@ -60,4 +61,3 @@ legend[c(1,26,52),] %>%
     ) %>%
     select(chrom, start, end, value) %>%
     write.table(file=outfile, sep='\t', row.names=F, col.names=F, quote=F)
-

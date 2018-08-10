@@ -61,3 +61,14 @@ samples <- samples %>%
 row.names(samples) <- samples$sample    
 
 rm(subcellular_fraction_levels)
+
+################################################################################
+# Lists of celltypes
+################################################################################
+celltypes.all <- levels(samples$celltype) # All celltypes
+
+# Determine which celltypes have replicates
+extracts <- c("longPolyA")
+samp_cts <- table(samples[samples$rnaextract %in% extracts,]$celltype)
+celltypes.rep <- names(samp_cts[samp_cts > 1])
+rm(samp_cts, extracts)

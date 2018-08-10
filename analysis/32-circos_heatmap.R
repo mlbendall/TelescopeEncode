@@ -2,10 +2,11 @@
 source('analysis/07-expressed_cpm.R')
 source('analysis/09-colors.R')
 
+library(tidyverse)
+
 circos_dir <- 'analysis/circos'
 ok_chroms <- c(sprintf('chr%d', 1:22), 'chrX', 'chrY')
 
-celltypes_order <- c('H1-hESC', 'K562', 'GM12878', 'HepG2', 'HeLa-S3', 'NHEK', 'HUVEC', 'MCF-7')
 ################################################################################
 # Setup celltype radius
 ################################################################################
@@ -13,10 +14,10 @@ r1_start <- 0.90
 ctype_size <- 0.06
 ctype_space <- 0.005
 
-ctype_r1 <- seq(r1_start, length.out = length(celltypes_order), by=-ctype_size)
+ctype_r1 <- seq(r1_start, length.out = length(celltypes.rep), by=-ctype_size)
 ctype_r0 <- ctype_r1 - (ctype_size - ctype_space)
-names(ctype_r1) <- celltypes_order
-names(ctype_r0) <- celltypes_order
+names(ctype_r1) <- celltypes.rep
+names(ctype_r0) <- celltypes.rep
 
 #--- Generate rings.conf
 outfile <- file.path(circos_dir, 'rings.conf')
@@ -31,7 +32,7 @@ cat('<plot>',
     file=outfile, append=FALSE
 )
 
-for (cur_type in celltypes_order) {
+for (cur_type in celltypes.rep) {
     cat('<plot>',
         sprintf('r1=%0.03fr', ctype_r0[cur_type] - 0.002),
         sprintf('r0=%0.03fr', ctype_r0[cur_type] - 0.004),
@@ -47,7 +48,7 @@ for (cur_type in celltypes_order) {
 
 outfile <- file.path(circos_dir, 'celltype_backgrounds.conf')
 cat('#\n', file=outfile, append=FALSE)
-for (cur_type in celltypes_order) {
+for (cur_type in celltypes.rep) {
     cat('<plot>',
         sprintf('r1=%0.03fr', ctype_r1[cur_type] + 0.003),
         sprintf('r0=%0.03fr', ctype_r0[cur_type] - 0.003),
@@ -64,7 +65,7 @@ for (cur_type in celltypes_order) {
 ################################################################################
 # HERV expression heatmap - by sample
 ################################################################################
-sfilt <- (samples$rnaextract %in% extracts) & (samples$celltype %in% celltypes_order)
+sfilt <- (samples$rnaextract %in% extracts) & (samples$celltype %in% celltypes.rep)
 
 lapply(samples[sfilt,]$sample, function(s) {
     cur_type <- samples[s,'celltype']
@@ -99,7 +100,7 @@ sprintf("Minimum expression value: %0.5f", allmin)
 sprintf("Maximum expression value: %0.5f", allmax)
 
 filelist <- filelist %>% 
-    dplyr::mutate(celltype=factor(celltype, levels=celltypes_order)) %>%
+    dplyr::mutate(celltype=factor(celltype, levels=celltypes.rep)) %>%
     dplyr::arrange(celltype) %>% 
     dplyr::mutate(tmp=1) %>%
     dplyr::group_by(celltype) %>%
@@ -114,7 +115,6 @@ cat(
     sprintf('color = heatcolor-min,%s,heatcolor-max',
             paste(sprintf('heatcolor-%d-seq-%d', length(heatmap_colors), 1:length(heatmap_colors)), collapse=',')
     ),
-    '# stroke_thickness = 4',
     'min = 0.0000',
     'max = 10.0000',
     'color_mapping = 2',
