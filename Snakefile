@@ -59,7 +59,9 @@ rule complete_sample:
         "samples/{sampid}/bt2_multi.unsorted.bam",
         "samples/{sampid}/bt2_multi.summary.txt",       
         "samples/{sampid}/inform-telescope_report.tsv",
-        "samples/{sampid}/RepEnrich_fraction_counts.txt"
+        "samples/{sampid}/RepEnrich_fraction_counts.txt",
+        "samples/{sampid}/bt_repenrich.summary.txt",
+        "samples/{sampid}/tetx_count.cntTable"
     output:
         touch("samples/{sampid}/completed.txt")
 
@@ -81,3 +83,5 @@ include: "Snakefile.telescope"
 ''' RepEnrich '''
 include: 'Snakefile.repenrich'
 
+''' RepEnrich '''
+include: 'Snakefile.tetranscripts'
