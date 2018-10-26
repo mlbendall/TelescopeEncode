@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 localrules: make_sampdir, set_sample_layout, concat_alignments, concat_fastq,
-            combine_bt2_summary,
+            combine_bt2_summary, combine_bt_summary
 
 rule make_sampdir:
     """ Create directory for sample 
@@ -83,4 +83,16 @@ rule combine_bt2_summary:
         layout = read_value(input.lout)
         shell(
             "python scripts/combine_bowtie2_logs.py --layout {layout} {input.logs} > {output}"
+        )
+
+
+rule combine_bt_summary:
+    input:
+        logs = lambda wildcards: expand("runs/{r}/bt_{p}.summary.txt", 
+                                         p=wildcards.preset, r=RUNS[wildcards.sampid]),                             
+    output:
+        "samples/{sampid}/bt_{preset, \w+}.summary.txt"
+    run:
+        shell(
+            "python scripts/combine_bowtie1_logs.py {input.logs} > {output}"
         )
