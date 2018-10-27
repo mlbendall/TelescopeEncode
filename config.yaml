@@ -50,3 +50,7 @@ repenrich_py: "scripts/RepEnrich-1.2/RepEnrich.py"
 repenrich_setup_py: "scripts/RepEnrich-1.2/RepEnrich_setup.py"
 repenrich_bed: "refs/RepEnrich.hg38/repenrich_LTR.bed"
 repenrich_index: "refs/RepEnrich.hg38/index_LTR"
+
+tetx_te_gtf: "refs/tetx/hg38_rmsk_TE.gtf"
+tetx_gene_gtf: "refs/tetx/hg38_genes.gtf"
+        

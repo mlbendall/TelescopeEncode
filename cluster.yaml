@@ -33,3 +33,7 @@ sortbam:
     t: 120
     out: "snakelogs/slurm-%j.{rule}.out"
     name: "sm.{rule}"
+tetx:
+    t: 2880
+    out: "snakelogs/slurm-%j.{rule}.{wildcards.sampid}.out"
+    name: "sm.{rule}.{wildcards.sampid}"
