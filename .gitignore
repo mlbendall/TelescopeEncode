@@ -1,2 +1,4 @@
 .snakemake
 .DS_Store
+scripts/RepEnrich-1.2
+scripts/SalmonTE

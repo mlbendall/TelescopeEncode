@@ -54,3 +54,4 @@ repenrich_index: "refs/RepEnrich.hg38/index_LTR"
 tetx_te_gtf: "refs/tetx/hg38_rmsk_TE.gtf"
 tetx_gene_gtf: "refs/tetx/hg38_genes.gtf"
         
+salmonTE_py: "scripts/SalmonTE/SalmonTE.py"

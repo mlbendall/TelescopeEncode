@@ -61,7 +61,8 @@ rule complete_sample:
         "samples/{sampid}/inform-telescope_report.tsv",
         "samples/{sampid}/RepEnrich_fraction_counts.txt",
         "samples/{sampid}/bt_repenrich.summary.txt",
-        "samples/{sampid}/tetx_count.cntTable"
+        "samples/{sampid}/tetx_count.cntTable",
+        "samples/{sampid}/EXPR.csv"
     output:
         touch("samples/{sampid}/completed.txt")
 
@@ -83,5 +84,8 @@ include: "Snakefile.telescope"
 ''' RepEnrich '''
 include: 'Snakefile.repenrich'
 
-''' RepEnrich '''
+''' TETranscripts '''
 include: 'Snakefile.tetranscripts'
+
+''' SalmonTE '''
+include: 'Snakefile.salmonte'
