@@ -24,9 +24,10 @@ rule salmonTE:
     input:
         exe = config['salmonTE_py'],
         r1 = "samples/{sampid}/clean_1.fastq.gz",
-        r2 = "samples/{sampid}/clean_2.fastq.gz"
+        r2 = "samples/{sampid}/clean_2.fastq.gz",
+        lout = "samples/{sampid}/LAYOUT.txt"
     output:
-        "samples/{sampid}/EXPR.csv"
+        "samples/{sampid}/salmonTE_EXPR.csv"
     threads: snakemake.utils.available_cpu_count()    
     run:
         layout = read_value(input.lout)
@@ -40,5 +41,6 @@ rule salmonTE:
             "--outpath samples/{wildcards.sampid} "
             "--exprtype count "
             "--num_threads {threads} "
-            "{rargs} "
+            "{rargs} && "
+            "cp samples/{wildcards.sampid}/EXPR.csv {output[0]}"
         )
