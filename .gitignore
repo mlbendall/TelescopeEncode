@@ -1,2 +1,14 @@
 .snakemake
 .DS_Store
+results.*.tgz
+
+regulation/*
+
+
+analysis/figures/*
+analysis/Rdata/*
+
+analysis/circos/*
+!analysis/circos/circos_*.conf
+!analysis/circos/generules.conf
+!analysis/circos/karyotype.human.hg38.txt
