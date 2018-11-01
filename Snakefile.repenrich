@@ -1,0 +1,111 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+
+
+""" 
+RepEnrich Setup
+"""
+localrules: download_repenrich, download_rmsk, build_repenrich_index
+rule download_repenrich:
+    ''' Download RepEnrich scripts (version 1.2)
+    '''
+    output:
+        config['repenrich_py'],
+        config['repenrich_setup_py']
+    shell:
+        "wget -O scripts/v1.2.tar.gz https://github.com/nskvir/RepEnrich/archive/v1.2.tar.gz && "
+        "tar -xzf scripts/v1.2.tar.gz -C scripts/ && "
+        "rm scripts/v1.2.tar.gz"
+
+rule download_rmsk:
+    ''' Download RepeatMasker annotation for RepEnrich
+    '''
+    output:
+        config['repenrich_bed']
+    shell:
+       "mkdir -p refs/RepEnrich.hg38 && "    
+       "mysql -h genome-mysql.cse.ucsc.edu -u genome -D hg38 -A "
+       "-e 'SELECT genoName,genoStart,genoEnd,repName,repClass,repFamily FROM rmsk WHERE repClass LIKE \"%LTR%\";' "
+       "| tail -n+2 > {output[0]}"    
+
+rule build_repenrich_index:
+    ''' Build RepEnrich index
+    '''
+    input:
+        config['repenrich_setup_py'],    
+        bed = config['repenrich_bed'],
+        genome = "refs/download/GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta.gz"
+    output:
+        config['repenrich_index']
+    conda:
+        "envs/repenrich.yaml"
+    shell:
+        "tmpfasta=$(mktemp) && "
+        "gunzip -c {input.genome} > $tmpfasta && "
+        "python {input[0]} {input.bed} $tmpfasta {output[0]} --is_bed TRUE"
+
+"""
+RepEnrich Analysis
+
+Three steps for RepEnrich Pipeline:
+1.  Align reads for each run with bowtie
+2.  Concatenate BAM and FASTQ for each run for sample-level
+3.  Run RepEnrich for each sample
+"""
+
+localrules: concat_fastq_multimap
+
+''' RepEnrich '''
+rule concat_fastq_multimap:
+    input:
+        r1 =   lambda wildcards: expand("runs/{r}/{p}.multimap_1.fastq",
+                                         r=RUNS[wildcards.sampid], p=wildcards.prefix),
+        r2 =   lambda wildcards: expand("runs/{r}/{p}.multimap_2.fastq", 
+                                         r=RUNS[wildcards.sampid], p=wildcards.prefix),
+        lout = "samples/{sampid}/LAYOUT.txt"
+    output:
+        m1 = "samples/{sampid}/{prefix, \w+}.multimap_1.fastq",
+        m2 = "samples/{sampid}/{prefix, \w+}.multimap_2.fastq"
+    run:
+        # Concatenate multimapping reads
+        layout = read_value(input.lout)
+        if layout == 'SINGLE':
+            shell(
+                "cat {input.r1} > {output.m1} && "
+                "touch {output.m2}"
+            )
+        else:
+            shell(
+                "cat {input.r1} > {output.m1} && "
+                "cat {input.r2} > {output.m2}"
+            )
+
+
+rule repenrich:
+    input:
+        unique = "samples/{sampid}/bt_repenrich.sorted.bam",
+        multi1 = "samples/{sampid}/bt_repenrich.multimap_1.fastq",
+        multi2 = "samples/{sampid}/bt_repenrich.multimap_2.fastq",
+        lout   = "samples/{sampid}/LAYOUT.txt",
+        REbed  = config['repenrich_bed'],
+        REidx  = config['repenrich_index'],
+        REpy   = config['repenrich_py']
+    output:
+        "samples/{sampid}/RepEnrich_fraction_counts.txt"
+    conda:
+        "envs/repenrich.yaml"
+    threads: snakemake.utils.available_cpu_count()
+    shell:
+        "PARG=$(grep -q 'PAIRED' {input.lout} && echo '--fastqfile2 {input.multi2}' || echo '') && "
+        "PARG2=$(grep -q 'PAIRED' {input.lout} && echo '--pairedend TRUE' || echo '') && "
+        "python {input.REpy} "
+        "{input.REbed} "
+        "samples/{wildcards.sampid} " 
+        "RepEnrich "
+        "{input.REidx} "
+        "{input.multi1} "
+        "$PARG "
+        "{input.unique} "
+        "--is_bed TRUE "
+        "--cpus {threads} "
+        "$PARG2 "

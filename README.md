@@ -128,7 +128,7 @@ conda create -n TETools \
   python=3.6 future cython snakemake appdirs=1.4.3 requests readline \
   biopython numpy scipy sra-tools hisat2 bowtie2 bowtie samtools picard bedtools \
   stringtie HTSeq htslib=1.5 pysam=0.12.0.1 parallel-fastq-dump \
-  fastqc multiqc
+  fastqc multiqc docopt pandas
 
 source activate TETools
 

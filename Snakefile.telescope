@@ -1,0 +1,44 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+
+localrules: download_telescope_annotation
+
+""" 
+Telescope Setup
+"""
+rule download_telescope_annotation:
+    output:
+        config['herv_annotation']
+    shell:
+        "wget -O {output} https://github.com/mlbendall/telescope_annotation_db/raw/master/builds/HERV_rmsk.hg38.v2/transcripts.gtf "
+
+
+"""
+Telescope Analysis
+
+Steps for Telescope Pipeline:
+1.  Align reads for each run with bowtie2 (multi preset)
+2.  Create sample-level BAM by concatenating alignments for each run
+3.  Run Telescope for each sample
+"""
+rule telescope:
+    input:
+        "samples/{sampid}/bt2_multi.unsorted.bam",
+        config['herv_annotation']
+    output:
+        "samples/{sampid}/{preset,\w+}-telescope_report.tsv",
+        "samples/{sampid}/{preset,\w+}.log"
+    run:
+        if wildcards.preset in config['telescope']:
+            telescope_args = dict_args(config['telescope'][wildcards.preset])
+        else:
+            telescope_args = ""
+        shell(
+            "telescope "
+            "assign "
+            "{telescope_args} "            
+            "--outdir $(dirname {output[0]}) "
+            "{input[0]} "
+            "{input[1]} "
+            "2>&1 | tee {output[1]}"
+        )

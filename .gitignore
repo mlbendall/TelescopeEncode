@@ -12,3 +12,5 @@ analysis/circos/*
 !analysis/circos/circos_*.conf
 !analysis/circos/generules.conf
 !analysis/circos/karyotype.human.hg38.txt
+scripts/RepEnrich-1.2
+scripts/SalmonTE

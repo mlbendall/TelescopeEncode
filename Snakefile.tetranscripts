@@ -1,0 +1,50 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+
+
+""" 
+TETranscripts Setup
+"""
+rule link_tetx_gene_gtf:
+    input:
+        "refs/download/ENCFF824ZKD.gtf.gz"
+    output:
+        "%s.gz" % config['tetx_gene_gtf']
+    shell:
+        'ln -s $(readlink -e {input}) {output}'
+
+rule download_tetx_te_gtf:
+    output:
+        "%s.gz" % config['tetx_te_gtf']
+    shell:
+        "wget -O {output} http://labshare.cshl.edu/shares/mhammelllab/www-data/TEToolkit/TE_GTF/hg38_rmsk_TE.gtf.gz"
+
+rule unzip_gtf:
+    input:
+        "{f}.gtf.gz"
+    output:
+        "{f}.gtf"
+    shell:
+        'gunzip -c {input} > {output}'
+
+"""
+TETranscripts Analysis
+"""
+rule tetx:
+    input:
+        bam = "samples/{sampid}/bt2_multi.unsorted.bam",
+        te_gtf = config['tetx_te_gtf'],        
+        gene_gtf = config['tetx_gene_gtf']
+    output:
+        "samples/{sampid}/tetx_count.cntTable",
+        "samples/{sampid}/tetx_count.log"
+    conda:
+        "envs/tetranscripts.yaml"
+    shell:
+        "TEcount "
+        "--format BAM --mode multi --stranded no "
+        "-b {input.bam} "
+        "--TE {input.te_gtf} "
+        "--GTF {input.gene_gtf} "
+        "--project samples/{wildcards.sampid}/tetx_count "
+        "2>&1 | tee {output[1]}"

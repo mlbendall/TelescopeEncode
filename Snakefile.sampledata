@@ -1,0 +1,98 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+
+localrules: make_sampdir, set_sample_layout, concat_alignments, concat_fastq,
+            combine_bt2_summary, combine_bt_summary
+
+rule make_sampdir:
+    """ Create directory for sample 
+    """
+    output:
+        "samples/{sampid}/"
+    shell:
+        "mkdir -p {output}"
+
+
+rule set_sample_layout:
+    """ Determine library layout for sample based on layout of runs
+            Raises RuleException if all runs do not have the same layout value.
+    """
+    input:
+        lout = lambda wildcards: expand("runs/{r}/LAYOUT.txt", r=RUNS[wildcards.sampid])
+    output:
+        "samples/{sampid}/LAYOUT.txt"
+    run:
+        # Check library layout
+        layouts = [read_value(f) for f in input.lout]
+        if layouts[0] == 'SINGLE':
+            if not all(l == 'SINGLE' for l in layouts):
+                raise RuleException("Layouts do not match.")
+            shell("echo 'SINGLE' > {output}")
+        else:
+            if not all(l == 'PAIRED' for l in layouts):
+                raise RuleException("Layouts do not match.")        
+            shell("echo 'PAIRED' > {output}")
+
+
+rule concat_alignments:
+    """ Concatenate BAM files from runs """
+    input:
+        bams = lambda wildcards: expand("runs/{r}/{a}_{p}.unsorted.bam", 
+                                         a=wildcards.aligner,
+                                         p=wildcards.preset,
+                                         r=RUNS[wildcards.sampid])
+    output:
+        "samples/{sampid}/{aligner, [a-zA-Z0-9]+}_{preset, \w+}.unsorted.bam"
+    shell:
+        "samtools cat -o {output} {input.bams}"
+
+
+rule concat_fastq:
+    input:
+        r1 =   lambda wildcards: expand("runs/{r}/clean_1.fastq.gz", 
+                                         r=RUNS[wildcards.sampid]),
+        r2 =   lambda wildcards: expand("runs/{r}/clean_2.fastq.gz", 
+                                         r=RUNS[wildcards.sampid]),
+        lout = "samples/{sampid}/LAYOUT.txt"
+    output:
+        "samples/{sampid}/clean_1.fastq.gz",
+        "samples/{sampid}/clean_2.fastq.gz"
+    run:
+        layout = read_value(input.lout)
+        if layout == 'SINGLE':
+            shell(
+                "cat {input.r1} > {output[0]} && "
+                "touch {output[1]}"
+            )
+        else:
+            shell(
+                "cat {input.r1} > {output[0]} && "
+                "cat {input.r2} > {output[1]}"
+            )
+
+
+
+rule combine_bt2_summary:
+    input:
+        logs = lambda wildcards: expand("runs/{r}/bt2_{p}.summary.txt", 
+                                         p=wildcards.preset, r=RUNS[wildcards.sampid]),
+        lout = "samples/{sampid}/LAYOUT.txt"                                     
+    output:
+        "samples/{sampid}/bt2_{preset, \w+}.summary.txt"
+    run:
+        layout = read_value(input.lout)
+        shell(
+            "python scripts/combine_bowtie2_logs.py --layout {layout} {input.logs} > {output}"
+        )
+
+
+rule combine_bt_summary:
+    input:
+        logs = lambda wildcards: expand("runs/{r}/bt_{p}.summary.txt", 
+                                         p=wildcards.preset, r=RUNS[wildcards.sampid]),                             
+    output:
+        "samples/{sampid}/bt_{preset, \w+}.summary.txt"
+    run:
+        shell(
+            "python scripts/combine_bowtie1_logs.py {input.logs} > {output}"
+        )

@@ -1,0 +1,106 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+
+""" Functions """
+def sra_url(sraid):
+    """ Return NCBI URL for SRA data download"""
+    base = "ftp://ftp.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByRun/sra"
+    return '/'.join([base, sraid[:3], sraid[:6], sraid, '%s.sra' % sraid])
+
+
+""" Rules """
+
+rule rundata:
+    """ Download SRA and dump FASTQ for an SRA Run
+    """
+    output:
+        sra  = "runs/{sraid}/{sraid}.sra",
+        r1   = "runs/{sraid}/reads_1.fastq.gz",
+        r2   = "runs/{sraid}/reads_2.fastq.gz",
+        lout = "runs/{sraid}/LAYOUT.txt"
+    params:
+        url = lambda x: sra_url(x.sraid),
+    threads: snakemake.utils.available_cpu_count()
+    run:
+        # Create run directory
+        # Download SRA file
+        # Dump SRA to FASTQ
+        shell(
+            "mkdir -p runs/{wildcards.sraid} && "
+            "curl -o {output.sra} {params.url} && "
+            "parallel-fastq-dump "
+            "-t {threads} "
+            "--tmpdir $TMPDIR "
+            "-O runs/{wildcards.sraid} "
+            "--gzip "
+            "--split-files --skip-technical "
+            " -F -B -Q 33 --defline-qual '+' "
+            "-s {output.sra} "
+        )
+        
+        # Rename FASTQ to reads_1.fastq.gz and reads_2.fastq.gz (if paired)
+        prefix = 'runs/%s/%s' % (wildcards.sraid, wildcards.sraid)
+        f1, f2, f3 = [path.exists('%s_%d.fastq.gz' % (prefix, i)) for i in [1,2,3]]
+        if not f1:
+            raise RuleException("Expected %s_1.fastq.gz." % (prefix))
+        if f2 and f3:    
+            raise RuleException("Too many reads dumped." % (prefix))
+        elif f2:
+            shell(
+                "mv runs/{wildcards.sraid}/{wildcards.sraid}_1.fastq.gz {output.r1} && "
+                "mv runs/{wildcards.sraid}/{wildcards.sraid}_2.fastq.gz {output.r2} && "
+                "echo 'PAIRED' > {output.lout} "
+            )
+        elif f3:
+            shell(
+                "mv runs/{wildcards.sraid}/{wildcards.sraid}_1.fastq.gz {output.r1} && "
+                "mv runs/{wildcards.sraid}/{wildcards.sraid}_3.fastq.gz {output.r2} && "
+                "echo 'PAIRED' > {output.lout} "
+            )
+        else:
+            shell(
+                "mv runs/{wildcards.sraid}/{wildcards.sraid}_1.fastq.gz {output.r1} && "
+                "touch {output.r2} && "
+                "echo 'SINGLE' > {output.lout} "
+            )
+
+
+rule flexbar:
+    input:
+        "runs/{sraid}/reads_1.fastq.gz",
+        "runs/{sraid}/reads_2.fastq.gz",
+        "runs/{sraid}/LAYOUT.txt"
+    output:
+        "runs/{sraid}/clean_1.fastq.gz",
+        "runs/{sraid}/clean_2.fastq.gz",
+        "runs/{sraid}/clean.log"
+    threads: snakemake.utils.available_cpu_count()
+    run:
+        # Parse flexbar arguments from config.yaml
+        flexbar_args = dict_args(config['flexbar'])
+        
+        # Setup adapters and inputs depending on library layout
+        layout = read_value(input[2])
+        if layout == 'SINGLE':
+            adapters = config['adapters']['SE']
+            rargs = '--reads {}'.format(input[0])
+        else:
+            adapters = config['adapters']['PE']
+            rargs = '--reads {} --reads2 {}'.format(input[0], input[1])
+            
+        # Run flexbar
+        shell(
+            "module load flexbar/3.0.3 && "
+            "flexbar "
+            "--threads {threads} "
+            "{flexbar_args} "
+            "--adapters {adapters} "
+            "{rargs} "
+            "--target runs/{wildcards.sraid}/clean "
+        )
+        # Adjust outputs for single-end reads
+        if layout == 'SINGLE':
+            shell(
+                "mv runs/{wildcards.sraid}/clean.fastq.gz {output[0]} && "
+                "touch {output[1]} "
+            )

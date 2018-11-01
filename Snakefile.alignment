@@ -1,0 +1,109 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+
+''' Bowtie2 alignment '''
+rule bowtie2:
+    input:
+        "runs/{sraid}/clean_1.fastq.gz",
+        "runs/{sraid}/clean_2.fastq.gz",
+        "runs/{sraid}/LAYOUT.txt",          
+        ancient(expand(config['bt2idx'] + ".{i}.bt2", i = range(1, 5))),
+        ancient(expand(config['bt2idx'] + ".rev.{i}.bt2", i = range(1, 3)))
+    output:
+        "runs/{sraid}/bt2_{preset, \w+}.unsorted.bam",
+        "runs/{sraid}/bt2_{preset, \w+}.summary.txt"
+    threads: snakemake.utils.available_cpu_count()
+    run:
+        # Parse bowtie2 arguments from config.yaml based on "preset"
+        if wildcards.preset in config['bowtie2']:
+            bowtie2_args = dict_args(config['bowtie2'][wildcards.preset])
+        else:
+            bowtie2_args = ""
+
+        # Setup inputs depending on library layout
+        layout = read_value(input[2])
+        if layout == 'SINGLE':
+            rargs = '-U {}'.format(input[0])
+        else:
+            rargs = '-1 {} -2 {}'.format(input[0], input[1])
+        
+        # Run bowtie2
+        shell(
+            "(bowtie2 "
+            "-p {threads} "
+            "{bowtie2_args} "
+            "--rg-id {wildcards.sraid} "
+            "-x {config[bt2idx]} "
+            "{rargs} | "
+            "samtools view -b > {output[0]}"
+            ") 3>&1 1>&2 2>&3 | tee {output[1]} "
+        )
+
+''' Bowtie alignment '''
+rule bowtie:
+    input:
+        r1 = "runs/{sraid}/clean_1.fastq.gz",
+        r2 = "runs/{sraid}/clean_2.fastq.gz",
+        lout = "runs/{sraid}/LAYOUT.txt",
+        ebwt = ancient(expand(config['btidx'] + ".{i}.ebwt", i = range(1, 5))),
+        rebwt = ancient(expand(config['btidx'] + ".rev.{i}.ebwt", i = range(1, 3)))
+    output:
+        bam = "runs/{sraid}/bt_{preset, \w+}.unsorted.bam",
+        log = "runs/{sraid}/bt_{preset, \w+}.summary.txt",
+        m1 = "runs/{sraid}/bt_{preset, \w+}.multimap_1.fastq",
+        m2 = "runs/{sraid}/bt_{preset, \w+}.multimap_2.fastq"
+    threads: snakemake.utils.available_cpu_count()
+    run:
+        # Parse bowtie arguments from config.yaml based on "preset"
+        if wildcards.preset in config['bowtie']:
+            bowtie_args = dict_args(config['bowtie'][wildcards.preset])
+        else:
+            bowtie_args = ""
+        
+        # Setup inputs depending on library layout
+        layout = read_value(input.lout)
+        if layout == 'SINGLE':
+            rargs = '{}'.format(input.r1)
+        else:
+            rargs = '-1 {} -2 {}'.format(input.r1, input.r2)
+
+        # Set prefix for multireads
+        if 'm' in config['bowtie'][wildcards.preset]:
+            mult_prefix = "runs/{}/bt_{}.multimap.fastq".format(wildcards.sraid, wildcards.preset)
+            mult_args = "--max {}".format(mult_prefix)
+        else:
+            mult_args = ""
+        
+        # Run bowtie
+        shell(
+            "(bowtie "
+            "--threads {threads} "
+            "{bowtie_args} "
+            "{mult_args} "
+            "{config[btidx]} "
+            "{rargs} | "
+            "samtools view -b > {output.bam}"
+            ") 3>&1 1>&2 2>&3 | tee {output.log} "
+        )
+        if 'm' in config['bowtie'][wildcards.preset]:
+            if layout == 'SINGLE':
+                shell(
+                    "mv {mult_prefix} {output.m1} && "
+                    "touch {output.m2}"
+                )
+        else:
+            shell(
+                "touch {output.m1} && touch {output.m2} "
+            )
+
+
+rule sortbam:
+    input:
+        "{f}.unsorted.bam"
+    output:
+        "{f}.sorted.bam",
+        "{f}.sorted.bam.bai"
+    threads: snakemake.utils.available_cpu_count()
+    shell:
+        "samtools sort -@ {threads} {input} > {output[0]} && "
+        "samtools index {output[0]}"
