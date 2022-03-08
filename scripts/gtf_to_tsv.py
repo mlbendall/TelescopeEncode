@@ -24,7 +24,7 @@ def gtf_to_tsv(infile, outfile):
             print('\t'.join(d[k] if k in d else '.' for k in colnames), file=outh)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Output uniquely mapping read from a multimapped alignment")
+    parser = argparse.ArgumentParser(description="Output telebuilder GTF as a TSV")
     parser.add_argument('infile', 
                         help='Input GTF file.')
     parser.add_argument('outfile', 

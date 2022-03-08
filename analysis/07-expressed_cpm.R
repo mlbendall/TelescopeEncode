@@ -4,18 +4,6 @@ load('analysis/Rdata/loaded.Rdata')
 library(tidyverse)
 
 ################################################################################
-# Select samples to consider for "expressed"
-################################################################################
-# extracts <- c("longPolyA")
-# 
-# celltypes <- levels(samples$celltype) # All celltypes
-# 
-# # Determine which celltypes have replicates
-# samp_cts <- table(samples[samples$rnaextract %in% extracts,]$celltype)
-# ctypes_rep <- names(samp_cts[samp_cts > 1])
-# rm(samp_cts)
-
-################################################################################
 # Counts Per Million
 ################################################################################
 mincpm <- 0.5

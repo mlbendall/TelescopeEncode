@@ -184,4 +184,4 @@ repenrich <- list(
     'pwresult' = pwresult
 )
 
-save(best_counts, file='analysis/Rdata/repenrich.Rdata')
+save(repenrich, file='analysis/Rdata/repenrich.Rdata')

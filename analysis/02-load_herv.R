@@ -23,3 +23,11 @@ annot.herv <- read.table('refs/HERV_rmsk.hg38.v2.tsv',
         letter=factor(letter, levels=unique(herv_fam$letter))
     ) %>%
     dplyr::select(locus, chrom, start, end, strand, length, family, group, letter, category)
+
+# Load family classification file for salmonTE (clades.csv)
+annot.salmonTE <- read.table('analysis/clades.csv',
+                             sep=',', header=T, stringsAsFactors=F) %>%
+        dplyr::mutate(class=factor(class, 
+                                   levels=c("Non-LTR Retrotransposon","LTR Retrotransposon")),
+                      clade=factor(clade)
+                      ) %>% head

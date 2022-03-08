@@ -129,3 +129,22 @@ counts.tetx <- lapply(samples$sample,
 
 row.names(counts.tetx) <- REfams$family
 rm(REfams, last_gene)
+
+#--- Counts from SalmonTE
+tmp <- read.table(file.path('samples', samples$sample[1], 'salmonTE_EXPR.csv'),
+                  sep=',', header=T, stringsAsFactors=F)
+REfams <- data.frame(TE=tmp$TE, stringsAsFactors=F)
+rm(tmp)
+
+counts.salTE <- lapply(samples$sample,
+                      function(s) {
+                          tmp <- read.table(file.path('samples', s, 'salmonTE_EXPR.csv'),
+                                            sep=',', header=T, stringsAsFactors=F)
+                          # Assure order is correct
+                          te <- dplyr::left_join(REfams, tmp, by='TE')
+                          names(te) <- c('TE', s)
+                          te %>% dplyr::select(s)
+                      }) %>% bind_cols
+
+row.names(counts.salTE) <- REfams$TE
+rm(REfams)

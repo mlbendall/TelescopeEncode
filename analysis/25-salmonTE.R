@@ -3,7 +3,6 @@ load('analysis/Rdata/loaded.Rdata')
 
 library(tidyverse)
 library(DESeq2)
-library(cowplot)
 
 
 do.parallel <- FALSE
@@ -16,7 +15,7 @@ makepdf <- TRUE
 
 
 ################################################################################
-# Best counts - DESeq2 (PolyA extract only)
+# SalmonTE - DESeq2 (PolyA extract only)
 ################################################################################
 # Criteria for samples
 extracts <- c("longPolyA")
@@ -25,17 +24,17 @@ sfilt <- samples$rnaextract %in% extracts
 # Criteria for genes
 mincount <- 5
 minsamp  <- 2
-gfilt <- rowSums(counts.best[,sfilt] >= mincount) >= minsamp
-gfilt <- gfilt & (annot.herv$chrom != 'chrY')
+gfilt <- rowSums(counts.salTE[,sfilt] >= mincount) >= minsamp
 
-dds.sel <- DESeqDataSetFromMatrix(counts.best[gfilt, sfilt], samples[sfilt, ], ~celltype)
-sizeFactors(dds.sel) <- calculateSizeFactors(metrics[sfilt,]$mapped_frags.bt2)
+dds.sel <- DESeqDataSetFromMatrix(round(counts.salTE[gfilt, sfilt]), samples[sfilt, ], ~celltype)
+# Unknown size factor
+# sizeFactors(dds.sel) <- calculateSizeFactors(metrics[sfilt,]$mapped_frags.bt1) # Use bt1 counts
 dds.sel <- DESeq(dds.sel, parallel=do.parallel)
 tform.sel <- varianceStabilizingTransformation(dds.sel, blind=FALSE)
 tform.sel.0 <- varianceStabilizingTransformation(dds.sel, blind=TRUE)
 
 ################################################################################
-# Best counts - Hierarchical clustering samples
+# SalmonTE - Hierarchical clustering samples
 ################################################################################
 source('analysis/09-colors.R')
 
@@ -52,7 +51,7 @@ samples.pv <- pvclust::pvclust(tmat,
                                nboot=1000
 )
 
-if(makepdf) pdf('analysis/figures/bcounts.sample_clustering.pdf', 
+if(makepdf) pdf('analysis/figures/salmonTE.sample_clustering.pdf', 
                 paper='USr', width=11, height=7.5)
 
 par(mar=c(7,3,7,1))
@@ -67,7 +66,7 @@ samples.pv %>%
     dendextend::set('labels_cex', 0.7) %>%
     dendextend::set('labels_col', dcols) %>%
     hang.dendrogram() %>%
-    plot(main="Best Counts - Cluster dendrogram with AU/BP values")
+    plot(main="SalmonTE - Cluster dendrogram with AU/BP values")
 
 samples.pv %>% text(cex=0.7) 
 
@@ -76,12 +75,12 @@ colored_dots(data.frame(
     "center"=center_colors[as.character(colData(tform.sel)[dorder,'sequencing_center'])],
     "cancer"=karyotype_colors[as.character(colData(tform.sel)[dorder,'karyotype'])],
     celltype=dcols
-), y_shift=-0.14)
+), y_shift=-0.03)
 
 if(makepdf) dev.off()
 
 ################################################################################
-# Best counts - Differentially expressed genes
+# SalmonTE - Differentially expressed families
 ################################################################################
 # Loads dend.short and celltypes_order
 load('analysis/Rdata/pvclust_celltypes.Rdata')
@@ -115,16 +114,16 @@ degcounts <- lapply(pwresult, function(reslist) {
 }) %>% bind_cols() %>% data.frame
 row.names(degcounts) <- colnames(degcounts) <- names(pwresult)
 
-if(makepdf) pdf('analysis/figures/bcounts.celltype_deg.pdf', 
+if(makepdf) pdf('analysis/figures/salmonTE.celltype_deg.pdf', 
     paper='USr', width=11, height=8.5, onefile = FALSE)
 
-hmbreaks.deg <- c(0, seq(5, 1500, 5), max(degcounts, 1501))
+hmbreaks.deg <- c(0, seq(1, 200, 1), max(degcounts, 201))
 hmcolor.deg <- c('#FFFFFF', colorRampPalette(RColorBrewer::brewer.pal(9, 'YlGnBu'))(length(hmbreaks.deg)-2))
 
 pheatmap::pheatmap(degcounts,
                    color=hmcolor.deg,
                    breaks=hmbreaks.deg,
-                   legend_breaks=c(0,500,1000,1500),
+                   legend_breaks=c(0,50,100, 150, 200),
                    display_numbers=TRUE, number_format='%d', 
                    cluster_rows=FALSE, cluster_cols=FALSE,
                    cellwidth=20, cellheight=20)
@@ -134,7 +133,7 @@ if(makepdf) dev.off()
 ################################################################################
 # PCA
 ################################################################################
-ntop <- 500
+ntop <- 200
 rv <- matrixStats::rowVars(assay(tform.sel))
 sel.gene <- order(rv, decreasing = TRUE)[seq_len(min(ntop, length(rv)))]
 pca <- prcomp(t(assay(tform.sel)[sel.gene, ]))
@@ -151,32 +150,32 @@ pca.df <- colData(tform.sel) %>%
 
 p12 <- pca.df %>% 
     ggplot(aes_string(x = "PC1", y = "PC2", color = "celltype", shape='sequencing')) + 
-    geom_point(size=3, alpha=0.75) + 
+    geom_point(size=3) + 
     xlab(paste0("PC1: ", round(percentVar[1] * 100), "% variance")) + 
     ylab(paste0("PC2: ", round(percentVar[2] * 100), "% variance")) + 
     scale_color_manual(values=celltype_colors) +
-    ggtitle('Best Counts - HERV expression PCA')
+    ggtitle('SalmonTE - HERV expression PCA')
 
-if(makepdf) pdf('analysis/figures/bcounts.sample_pca_1v2.pdf', paper='USr', width=6, height=4)
+if(makepdf) pdf('analysis/figures/salmonTE.sample_pca_1v2.pdf', paper='USr', width=10, height=8)
 p12
 if(makepdf) dev.off()
 
 p13 <- pca.df  %>%
     ggplot(aes_string(x = "PC1", y = "PC3", color = "celltype", shape='sequencing')) + 
-    geom_point(size=3, alpha=0.75) + 
+    geom_point(size=2) + 
     xlab(paste0("PC1: ", round(percentVar[1] * 100), "% variance")) + 
     ylab(paste0("PC3: ", round(percentVar[3] * 100), "% variance")) + 
     scale_color_manual(values=celltype_colors) +
-    ggtitle('Best Counts - HERV expression PCA')
+    ggtitle('SalmonTE - HERV expression PCA')
 
-if(makepdf) pdf('analysis/figures/bcounts.sample_pca_1v3.pdf', paper='USr', width=6, height=4)
+if(makepdf) pdf('analysis/figures/salmonTE.sample_pca_1v3.pdf', paper='USr', width=10, height=8)
 p13
 if(makepdf) dev.off()
 
 ################################################################################
 # Save data
 ################################################################################
-best_counts <- list(
+salTE <- list(
     'dds.sel' = dds.sel,
     'tform.sel' = tform.sel,
     'tform.sel.0' = tform.sel.0,
@@ -186,4 +185,4 @@ best_counts <- list(
     'pwresult' = pwresult
 )
 
-save(best_counts, file='analysis/Rdata/best_counts.Rdata')
+save(salTE, file='analysis/Rdata/salmonTE.Rdata')

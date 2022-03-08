@@ -30,24 +30,24 @@ pca.df <- colData(tform.sel) %>%
 
 p12 <- pca.df %>% 
     ggplot(aes_string(x = "PC1", y = "PC2", color = "celltype", shape='sequencing')) + 
-    geom_point(size=3) + 
+    geom_point(size=3, alpha=0.75) + 
     xlab(paste0("PC1: ", round(percentVar[1] * 100), "% variance")) + 
     ylab(paste0("PC2: ", round(percentVar[2] * 100), "% variance")) + 
     scale_color_manual(values=celltype_colors) +
     ggtitle('HERV expression PCA')
 
-if(makepdf) pdf('analysis/figures/sample_pca_1v2.pdf', paper='USr', width=10, height=8)
+if(makepdf) pdf('analysis/figures/sample_pca_1v2.pdf', paper='USr', width=6, height=4)
 p12
 if(makepdf) dev.off()
 
 p13 <- pca.df  %>%
     ggplot(aes_string(x = "PC1", y = "PC3", color = "celltype", shape='sequencing')) + 
-    geom_point(size=2) + 
+    geom_point(size=3, alpha=0.75) + 
     xlab(paste0("PC1: ", round(percentVar[1] * 100), "% variance")) + 
     ylab(paste0("PC3: ", round(percentVar[3] * 100), "% variance")) + 
     scale_color_manual(values=celltype_colors) +
     ggtitle('HERV expression PCA')
 
-if(makepdf) pdf('analysis/figures/sample_pca_1v3.pdf', paper='USr', width=10, height=8)
+if(makepdf) pdf('analysis/figures/sample_pca_1v3.pdf', paper='USr', width=6, height=4)
 p13
 if(makepdf) dev.off()
